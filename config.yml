@@ -1,0 +1,24 @@
+#########################################################################
+# config with just one section  - default
+########################################################################
+default:
+
+  # url to my github location
+  remote.base_url: "https://raw.githubusercontent.com/kowusu01"
+  remote.path: "/TransformedDatasets/main/adult_income/rda/"
+
+  training_data.file_name: "training_set_final.rda"
+  test_data.file_name: "test_set_final.rda"
+
+  # local folder where files are downloaded
+  local_folder: "rda"
+
+  # sample size for training, 1000
+  sample_size: 1000
+
+  # number of cross validation folds 5
+  cross_validation_folds: 5
+
+  # tuning length allow you to tell caret how many random values
+  # it should pick for the hyperparameter, in this case k (knn hyper parameter)
+  k_hyperparameter.tuneLength: 10
