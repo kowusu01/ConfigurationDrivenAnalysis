@@ -1,5 +1,6 @@
 # Writing clean and configurable Machine Learning code using R and the config package--a practical example
 
+![alt text](https://github.com/kowusu01/ConfigurationDrivenAnalysis/blob/main/splash.PNG?raw=true)
 
 ### Most beginners write their machine learning code with all configurable values hardcoded. Changing a value often means searching entire code and making changes in multiple places.
 

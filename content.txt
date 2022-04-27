@@ -1,0 +1,130 @@
+Writing clean and configurable Machine Learning code using R and the config package — a practical example
+
+Most beginners write their machine learning code with all configurable values hardcoded. Changing a value often means searching entire code and making changes in multiple places.
+
+What you will learn in this tutorial:
+identify configurable items — variables that can be changed to drive a machine learning task.
+refactor code to extract configurable items.
+separate configuration from code, and drive machine task from outside the code.
+
+As a bonus, you will also learn:
+how the train, fit, and predict approach is used in machine learning.
+how a simple classification is performed using the caret package.
+how to load data from GitHub repository into R.
+
+Main R packages of interest:
+config package — https://cran.r-project.org/web/packages/config
+caret package — https://cran.r-project.org/web/packages/caret
+tidyverse package — https://cran.r-project.org/web/packages/tidyverse
+
+Code Repository:
+The entire code and the dataset can be found at:
+Code: https://github.com/kowusu01/ConfigurationDrivenAnalysis
+Dataset: https://github.com/kowusu01/TransformedDatasets
+
+Motivation
+Suppose you are performing a simple machine learning classification task using knn algorithm:
+your dataset is so large it could take hours for a model to run. During the training, you want to work with a small sample instead of the entire dataset, but you want to start with different sample sizes and find a decent sample size to use.
+you also want to use cross-validation, but you want to be able to change the number of folds or repetitions during the training.
+During development and debugging, you want your code to be able to run quickly from begin the end, without wasting time. This ensures that when new code is added you can run quickly and detect any errors introduced.
+
+In general, you also want to avoid touching code that works. Once your model is working, and you are only optimizing the parameters, it’s better if you can drive optimizations via configurations outside the main code for two reasons:
+when something goes wrong, you know for sure where to look, definitely not in the code.
+when code is deployed to production, configuration can be changed to reflect new environments. Even though the configuration changes, the code does not! This can be very important in some critical research scenarios where once the research is completed, you don’t tamper with it. When someone looks at the timestamp on your analysis code, and it has changed since it was last published, it may be difficult to explain even if it was just one character that changed.
+For many experienced Data Scientists and Data Engineers, and those with software engineering background, using configuration files is not new. However, for most beginners who may have little or no prior experience in formal coding, this may be new. The actual implementation is very easy. The benefits of using configuration in large production software systems cannot be overstated.
+
+What is configuration?
+In very loose terms, configuration is a set of variables whose values are required by the code, but often we want to change those values to provide a different environment, data, or settings for the code.
+The machine learning task
+As an illustration, let’s consider a simple classification task. In this example we will download a pre-processed dataset from GitHub repository and use the R caret package to train the model. The main steps will be:
+
+- download the training and test datasets,
+- select a sample from the training data, and set up cross-validation scheme for the training,
+- use the train, fit, predict approach to complete the machine learning task.
+
+A bit about the dataset
+The data used in this tutorial is a dataset that includes attributes such as age, level of education, marital status, gender, race, etc., and whether or not the individua’s income is above 50K.
+The original data is part of the UCI machine learning datasets provided to the public. It can be found at: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/. The version used here has been cleaned and transformed.
+
+The machine learning approach — train, fit, predict
+The train, fit, and predict approach separates the machine learning tasks into three distinct phases:
+train — In the training phase, we use sampling and cross-validation to train a model that helps us to find an optimized value for the algorithm’s main hyperparameter(s). For knn algorithm, the main hyperparameter of interest is k, therefore the training phase will help is obtain the best value for k that we can use in our final model.
+- fit — In the fitting phase, we use the optimized value for k obtained during then training to fit a final model on the entire training data.
+- predict — Lastly, we use the final model from the fitting phase to make predictions using the test dataset. After the prediction, we can compare the predicted values to the actual response values in the test dataset to see how the model performed.
+
+The code for performing these tasks (code snippets will be shown later) is modeled around the steps outlined above.
+
+Model training and cross-validation details
+- sample size: For the purpose of our illustration, we will select sample (1000 rows) from the training dataset.
+- cross-validation folds: Also, we will use cross-validation to train the model; we use 5-fold cross validation.
+- caret train tuneLength: We set caret tuning parameter tuneLength to 10.
+
+Code structure and logic
+Let’s looks the code and how configuration elements are used throughout this simple task.
+The first code snippet is standard, we set the seed to ensure reproducible results, and then load libraries we need. In addition, we define a function (lines 13–30) we can call later to download the datasets. This section does not have any configurable values.
+[image: code snippet showing initial code to load libraries, and define function for downloading a file]
+
+Where are the configurable items?
+In the next code snippet, we call the function fnDownloadData() to download the dataset. Here, I am using a dataset I have personally cleaned and transformed, ready for analysis and hosted on GitHub. You are welcome to download the data and use it for your own analysis.
+[image: code snippet showing calling a function with hard-coded values]
+
+We see in this section that in the call to the function fnDownloadData(), all the values passed into the function are hard-coded. We call this method twice to load the training data and the test data. If the remote_base_url, for instance, changes, we have to change it in two places in this code!
+
+Another area in the code where we use configurable values is where select the sample data and set up the cross-validation scheme, see code snippet below. As mentioned earlier, during the training, we would like to try different samples sizes, and also experiment with the cross-validation. To make the code run faster, we might want to set cross-validation number to 1, and set the sample size to a small number. In this simple, one person, one environment scenario, that is not a problem. But nonetheless, it is hard-coded!
+[image: code snippet to select sample data and set up cross-validation scheme]
+
+Quick inspection of the data
+The training dataset we will use contains 29303 records. There are 92 attributes, 91 of them are the features and the remaining one (the over50K column) being the response variable. All columns are numeric except the response variable which is categorical (Y/N, Y if the individual’s income is above 50K, or otherwise).
+The test dataset contains 3257 records and has the same format at the training dataset.
+The following is small snapshot the training data.
+[image:snapshot of the training data]
+
+Organize configurable items in one place
+The first attempt towards configuration files is to move all the configuration items to one place.
+[image:code snipper to show all configurable items defined in one place]
+
+Now we see how the call to function fnDownloadData() uses the variables (lines 28 and 34), it looks much cleaner!
+
+Introducing the R config package
+
+Finally, we introduce the R package config. This package allows you to define all your configurations in a yaml file, R takes care of everything from there.
+Using config package requires three steps:
+- define config file (config.yml)
+- load the config in your R code into an object
+- reference the element using the config object
+
+The following is a simple config file used in our example.
+[image:sample config.yml]
+
+Reading configuration elements
+In R, you call method in the config package get() to load the config element into memory. The call to the get() method must be assigned to a variable which can later be used to reference the individual elements in the config file. You can pass a path to a config file to the get() method but by default, R will load the configuration file if the file is located at the home directory and named config.yml. Below is the entire code snippet showing how the config is loaded and elements access.
+[image:code showing how to load the config into memory and how to access elements]
+
+Now with this setup, you can keep modifying the values in the config, save it and run the code to test different sample sizes, different cross validation folds, etc.
+Putting it all together — running the entire analysis
+With everything in place, we can now change the values such as the sample size or the number of cross-validation runs in the config and run the code without touching the code itself. The following is the entire listing of the code using configuration.
+[image: all code snippets showing the entire analysis with configuration]
+
+Results from the analysis
+You can download the entire for this tutorial from my GitHub repo and run to see the results. But for those who want to see the result from our classification example, here are some outputs from the analysis:
+[image:results from the training model (cross-validation results)]
+
+
+[image/code:code snippet showing how caret train() method is used and displaying the cross validation results]
+[image:output for cross-validation results]
+
+compare first few predictions with actual values from the test_set
+[code:code snippet for comparing first few predictions with actual values]
+
+print some model performance details from the confusionMatrix
+[code:code snippet for confusionMatrix stats]
+[image:some performance stats from the classification analysis]
+
+Conclusion
+In this tutorial, the main goal was to demonstrate the use of the config package in R, using a practical machine learning example with code. In the process, I also utilized the R caret package to train a classification algorithm and used the final model to make predictions. I hope readers will take this basic knowledge and explore the possibilities with configuration especially in teams and in production environments. Good Luck!
+
+
+
+
+
+
